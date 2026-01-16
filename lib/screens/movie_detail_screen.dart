@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../models/movie.dart';
 import '../services/storage_service.dart';
 
@@ -13,7 +12,6 @@ class MovieDetailScreen extends StatefulWidget {
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
-  final StorageService _storageService = StorageService();
   bool _isFavorite = false;
   bool _isInWatchlist = false;
 
@@ -24,20 +22,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _checkStatus() async {
-    final isFav = await _storageService.isFavorite(widget.movie.id);
-    final isWatch = await _storageService.isInWatchlist(widget.movie.id);
+    final isFavorite = await StorageService.isFavorite(widget.movie.id);
+    final isInWatchlist = await StorageService.isInWatchlist(widget.movie.id);
+    
     setState(() {
-      _isFavorite = isFav;
-      _isInWatchlist = isWatch;
+      _isFavorite = isFavorite;
+      _isInWatchlist = isInWatchlist;
     });
   }
 
   Future<void> _toggleFavorite() async {
     if (_isFavorite) {
-      await _storageService.removeFromFavorites(widget.movie.id);
+      await StorageService.removeFromFavorites(widget.movie.id);
     } else {
-      await _storageService.addToFavorites(widget.movie);
+      await StorageService.addToFavorites(widget.movie);
     }
+    
     setState(() {
       _isFavorite = !_isFavorite;
     });
@@ -45,27 +45,24 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Future<void> _toggleWatchlist() async {
     if (_isInWatchlist) {
-      await _storageService.removeFromWatchlist(widget.movie.id);
+      await StorageService.removeFromWatchlist(widget.movie.id);
     } else {
-      await _storageService.addToWatchlist(widget.movie);
+      await StorageService.addToWatchlist(widget.movie);
     }
+    
     setState(() {
       _isInWatchlist = !_isInWatchlist;
     });
   }
 
-  void _playMovie() {
-    // Show in-app notification
+  void _showPlayNotification() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Movie is Playing'),
-        duration: Duration(seconds: 3),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: Text('Playing "${widget.movie.title}"'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 2),
       ),
     );
-
-    // Haptic feedback
-    HapticFeedback.lightImpact();
   }
 
   @override
@@ -76,8 +73,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
-              background: widget.movie.backdropPath.isNotEmpty
+              background: widget.movie.backdropPath != null
                   ? Image.network(
                       widget.movie.fullBackdropUrl,
                       fit: BoxFit.cover,
@@ -104,67 +103,55 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
                   Text(
                     widget.movie.title,
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Rating and Release Date
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      // Rating Circle
                       Container(
-                        width: 60,
-                        height: 60,
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _getRatingColor(widget.movie.voteAverage),
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Center(
-                          child: Text(
-                            '${(widget.movie.voteAverage * 10).toInt()}%',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, color: Colors.white, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.movie.voteAverage.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'User Score',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Release Date: ${widget.movie.releaseDate}',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          ],
+                      Text(
+                        widget.movie.releaseDate,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // Action Buttons
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _playMovie,
+                          onPressed: _showPlayNotification,
                           icon: const Icon(Icons.play_arrow),
-                          label: const Text('Play Now'),
+                          label: const Text('Play'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             foregroundColor: Colors.white,
@@ -172,62 +159,39 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 8),
                       IconButton(
                         onPressed: _toggleFavorite,
                         icon: Icon(
                           _isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: _isFavorite ? Colors.red : Colors.grey,
+                          color: Colors.red,
                         ),
                       ),
                       IconButton(
                         onPressed: _toggleWatchlist,
                         icon: Icon(
                           _isInWatchlist ? Icons.watch_later : Icons.watch_later_outlined,
-                          color: _isInWatchlist ? Colors.blue : Colors.grey,
+                          color: Colors.red,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // Overview
                   const Text(
                     'Overview',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.movie.overview.isNotEmpty 
-                        ? widget.movie.overview 
-                        : 'No overview available.',
-                    style: const TextStyle(fontSize: 16, height: 1.5),
+                    widget.movie.overview,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Genres (if available)
-                  if (widget.movie.genres.isNotEmpty) ...[
-                    const Text(
-                      'Genres',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: widget.movie.genres.map((genre) {
-                        return Chip(
-                          label: Text(genre),
-                          backgroundColor: Colors.grey[200],
-                        );
-                      }).toList(),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -235,11 +199,5 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         ],
       ),
     );
-  }
-
-  Color _getRatingColor(double rating) {
-    if (rating >= 7.0) return Colors.green;
-    if (rating >= 5.0) return Colors.orange;
-    return Colors.red;
   }
 }

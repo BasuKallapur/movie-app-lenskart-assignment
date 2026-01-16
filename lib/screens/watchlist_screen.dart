@@ -12,7 +12,6 @@ class WatchlistScreen extends StatefulWidget {
 }
 
 class _WatchlistScreenState extends State<WatchlistScreen> {
-  final StorageService _storageService = StorageService();
   List<Movie> _watchlist = [];
   bool _isLoading = true;
 
@@ -23,17 +22,15 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   }
 
   Future<void> _loadWatchlist() async {
-    try {
-      final watchlist = await _storageService.getWatchlist();
-      setState(() {
-        _watchlist = watchlist;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _isLoading = true;
+    });
+
+    final watchlist = await StorageService.getWatchlist();
+    setState(() {
+      _watchlist = watchlist;
+      _isLoading = false;
+    });
   }
 
   @override
@@ -45,26 +42,23 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         foregroundColor: Colors.white,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
           : _watchlist.isEmpty
               ? const EmptyStateWidget(
-                  message: 'No movies in watchlist yet.\nAdd movies you want to watch later!',
+                  message: 'No movies in watchlist\nAdd movies you want to watch later!',
                   icon: Icons.watch_later_outlined,
                 )
               : GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(8.0),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 0.7,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
                   itemCount: _watchlist.length,
                   itemBuilder: (context, index) {
-                    return MovieCard(
-                      movie: _watchlist[index],
-                      onWatchlistChanged: () => _loadWatchlist(),
-                    );
+                    return MovieCard(movie: _watchlist[index]);
                   },
                 ),
     );

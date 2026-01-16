@@ -2,21 +2,21 @@ class Movie {
   final int id;
   final String title;
   final String overview;
-  final String posterPath;
-  final String backdropPath;
-  final String releaseDate;
+  final String? posterPath;
+  final String? backdropPath;
   final double voteAverage;
-  final List<String> genres;
+  final String releaseDate;
+  final List<int> genreIds;
 
   Movie({
     required this.id,
     required this.title,
     required this.overview,
-    required this.posterPath,
-    required this.backdropPath,
-    required this.releaseDate,
+    this.posterPath,
+    this.backdropPath,
     required this.voteAverage,
-    required this.genres,
+    required this.releaseDate,
+    required this.genreIds,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
@@ -24,11 +24,11 @@ class Movie {
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       overview: json['overview'] ?? '',
-      posterPath: json['poster_path'] ?? '',
-      backdropPath: json['backdrop_path'] ?? '',
-      releaseDate: json['release_date'] ?? '',
+      posterPath: json['poster_path'],
+      backdropPath: json['backdrop_path'],
       voteAverage: (json['vote_average'] ?? 0).toDouble(),
-      genres: [], // We'll populate this later
+      releaseDate: json['release_date'] ?? '',
+      genreIds: List<int>.from(json['genre_ids'] ?? []),
     );
   }
 
@@ -39,12 +39,19 @@ class Movie {
       'overview': overview,
       'poster_path': posterPath,
       'backdrop_path': backdropPath,
-      'release_date': releaseDate,
       'vote_average': voteAverage,
-      'genres': genres,
+      'release_date': releaseDate,
+      'genre_ids': genreIds,
     };
   }
 
-  String get fullPosterUrl => 'https://image.tmdb.org/t/p/w500$posterPath';
-  String get fullBackdropUrl => 'https://image.tmdb.org/t/p/w1280$backdropPath';
+  String get fullPosterUrl {
+    if (posterPath == null) return '';
+    return 'https://image.tmdb.org/t/p/w500$posterPath';
+  }
+
+  String get fullBackdropUrl {
+    if (backdropPath == null) return '';
+    return 'https://image.tmdb.org/t/p/w780$backdropPath';
+  }
 }

@@ -12,7 +12,6 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  final StorageService _storageService = StorageService();
   List<Movie> _favorites = [];
   bool _isLoading = true;
 
@@ -23,17 +22,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Future<void> _loadFavorites() async {
-    try {
-      final favorites = await _storageService.getFavorites();
-      setState(() {
-        _favorites = favorites;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _isLoading = true;
+    });
+
+    final favorites = await StorageService.getFavorites();
+    setState(() {
+      _favorites = favorites;
+      _isLoading = false;
+    });
   }
 
   @override
@@ -45,26 +42,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         foregroundColor: Colors.white,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
           : _favorites.isEmpty
               ? const EmptyStateWidget(
-                  message: 'No favorite movies yet.\nStart adding movies to your favorites!',
-                  icon: Icons.favorite_border,
+                  message: 'No favorite movies yet\nAdd some movies to your favorites!',
+                  icon: Icons.favorite_outline,
                 )
               : GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(8.0),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 0.7,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
                   itemCount: _favorites.length,
                   itemBuilder: (context, index) {
-                    return MovieCard(
-                      movie: _favorites[index],
-                      onFavoriteChanged: () => _loadFavorites(),
-                    );
+                    return MovieCard(movie: _favorites[index]);
                   },
                 ),
     );

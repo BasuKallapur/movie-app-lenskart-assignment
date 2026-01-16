@@ -13,66 +13,47 @@ class MoviesScreen extends StatefulWidget {
 }
 
 class _MoviesScreenState extends State<MoviesScreen> {
-  final ApiService _apiService = ApiService();
-  final TextEditingController _searchController = TextEditingController();
   List<Movie> _movies = [];
-  List<Movie> _searchResults = [];
+  List<Movie> _filteredMovies = [];
   bool _isLoading = true;
-  bool _isSearching = false;
-  String _error = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadPopularMovies();
+    _loadMovies();
   }
 
-  Future<void> _loadPopularMovies() async {
+  Future<void> _loadMovies() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      setState(() {
-        _isLoading = true;
-        _error = '';
-      });
-      
-      final movies = await _apiService.getPopularMovies();
+      final movies = await ApiService.getPopularMovies();
       setState(() {
         _movies = movies;
+        _filteredMovies = movies;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _searchMovies(String query) async {
-    if (query.isEmpty) {
-      setState(() {
-        _isSearching = false;
-        _searchResults = [];
-      });
-      return;
-    }
-
-    try {
-      setState(() {
-        _isSearching = true;
-        _error = '';
-      });
-      
-      final results = await _apiService.searchMovies(query);
-      setState(() {
-        _searchResults = results;
-        _isSearching = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isSearching = false;
-      });
-    }
+  void _filterMovies(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredMovies = _movies;
+      } else {
+        _filteredMovies = _movies
+            .where((movie) =>
+                movie.title.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
   }
 
   @override
@@ -85,7 +66,6 @@ class _MoviesScreenState extends State<MoviesScreen> {
       ),
       body: Column(
         children: [
-          // Search Bar
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
@@ -93,77 +73,39 @@ class _MoviesScreenState extends State<MoviesScreen> {
               decoration: InputDecoration(
                 hintText: 'Search movies...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _searchMovies('');
-                        },
-                      )
-                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
+                filled: true,
+                fillColor: Colors.grey[100],
               ),
-              onChanged: _searchMovies,
+              onChanged: _filterMovies,
             ),
           ),
-          
-          // Movies List
           Expanded(
-            child: _buildMoviesList(),
+            child: _isLoading
+                ? const LoadingWidget()
+                : _filteredMovies.isEmpty
+                    ? const EmptyStateWidget(
+                        message: 'No movies found',
+                        icon: Icons.search_off,
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(8.0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: _filteredMovies.length,
+                        itemBuilder: (context, index) {
+                          return MovieCard(movie: _filteredMovies[index]);
+                        },
+                      ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMoviesList() {
-    if (_isLoading) {
-      return const LoadingWidget();
-    }
-
-    if (_error.isNotEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_error),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadPopularMovies,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final moviesToShow = _searchController.text.isNotEmpty ? _searchResults : _movies;
-
-    if (moviesToShow.isEmpty) {
-      return EmptyStateWidget(
-        message: _searchController.text.isNotEmpty 
-            ? 'No movies found for "${_searchController.text}"'
-            : 'No movies available',
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.7,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: moviesToShow.length,
-      itemBuilder: (context, index) {
-        return MovieCard(movie: moviesToShow[index]);
-      },
     );
   }
 

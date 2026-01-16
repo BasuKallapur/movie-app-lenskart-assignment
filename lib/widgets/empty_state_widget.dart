@@ -24,11 +24,12 @@ class EmptyStateWidget extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             message,
-            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
