@@ -2,6 +2,14 @@
 
 A Flutter mobile application for discovering and managing movies using The Movie Database (TMDB) API.
 
+<img width="500" height="1500" alt="image" src="https://github.com/user-attachments/assets/e9822390-6c02-421c-933a-c071521b6cfe" />   <img width="500" height="1500" alt="image" src="https://github.com/user-attachments/assets/f91a376b-c93b-4b35-b916-7a7d56f6aaa1" />
+
+
+
+<img width="500" height="1500" alt="image" src="https://github.com/user-attachments/assets/fddccaaa-fc48-44b0-83e0-4af3d03ab009" />  <img width="500" height="1500" alt="image" src="https://github.com/user-attachments/assets/1d608613-01a2-4166-895f-c3420199f456" />
+
+
+
 ## Features
 
 - Splash screen with smooth navigation to main application
